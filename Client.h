@@ -1,8 +1,8 @@
 /* 
- * File: P1/client.h
- * Desc: The function prototypes and variables used by the client.
+ * File: P2/Client.h
+ * Desc: The function prototypes and variables used by the client.It uses CRC to check for errors. 
  * Author: Jasjeet Dhaliwal
- * Date: 1/27/2016
+ * Date: 3/7/2016
  *
  */
 

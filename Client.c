@@ -1,8 +1,8 @@
 /*
- * File: P1/Client.c
- * Desc: Implements the functions declared for the client. 
+ * File: P2/Client.c
+ * Desc: Implements the function declared in Client.h 
  * Author: Jasjeet Dhaliwal
- * Date: 1/27/2016
+ * Date: 3/7/2016
  *
  */
 
@@ -31,8 +31,9 @@ int initClient (Client* client, client_args* args) {
 	client->servlen = sizeof(client->serv_addr); 
 	strcpy(client->fin,"FINCS"); 
 
-	int flags = fcntl(client->sockfd, F_GETFL, 0);
-  	fcntl(client->sockfd, F_SETFL, flags | O_NONBLOCK);
+	/* Option to make the send call non blocking */ 
+	//int flags = fcntl(client->sockfd, F_GETFL, 0);
+  	//fcntl(client->sockfd, F_SETFL, flags | O_NONBLOCK);
 
 	
 	return 1; 

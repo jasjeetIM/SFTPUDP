@@ -1,8 +1,8 @@
 /* 
- * File: P1/Server.c
+ * File: P2/Server.c
  * Desc: Implements the functions related to the Server structure. 
  * Author: Jasjeet Dhaliwal
- * Date: 1/27/2016
+ * Date: 3/7/2016
  *
  */
 

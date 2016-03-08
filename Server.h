@@ -1,8 +1,8 @@
 /*
- * File: P1/Server.h
- * Desc: This file delcares the Server structure and its related functions. 
+ * File: P2/Server.h
+ * Desc: This file delcares the Server structure and its related functions.It uses CRC to check for errors.  
  * Author: Jasjeet Dhaliwal
- * Date: 1/27/2016
+ * Date: 3/7/2016
  *
  */
 

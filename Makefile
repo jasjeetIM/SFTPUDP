@@ -6,7 +6,7 @@ Server.o \
 Client.o 
 
 CC=gcc
-CCFLAGS=-Wall -g -o 
+CCFLAGS=-g -o 
 LFLAG= -c
 
 REBUILDABLES=$(OBJS) $(TARGET)
