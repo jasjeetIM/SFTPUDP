@@ -1,8 +1,8 @@
 /*
- * File: P2/Client.c
- * Desc: Implements the function declared in Client.h 
+ * File: P1/Client.c
+ * Desc: Implements the functions declared for the client. 
  * Author: Jasjeet Dhaliwal
- * Date: 3/7/2016
+ * Date: 1/27/2016
  *
  */
 
@@ -31,9 +31,8 @@ int initClient (Client* client, client_args* args) {
 	client->servlen = sizeof(client->serv_addr); 
 	strcpy(client->fin,"FINCS"); 
 
-	/* Option to make the send call non blocking */ 
-	//int flags = fcntl(client->sockfd, F_GETFL, 0);
-  	//fcntl(client->sockfd, F_SETFL, flags | O_NONBLOCK);
+//	int flags = fcntl(client->sockfd, F_GETFL, 0);
+  //	fcntl(client->sockfd, F_SETFL, flags | O_NONBLOCK);
 
 	
 	return 1; 
@@ -83,7 +82,7 @@ int sendFile(Client * client, client_args* args) {
 	w_temp = strlen(client->w_buffer); 
 	client->w_buffer[w_temp]= crc;   
 	
-	for (; ; ++seq) { 	
+	for (; ; ) { 	
 		
 		if (seq%2 == 0) {
 			client->w_buffer[w_temp+1] = '0'; 
@@ -110,11 +109,51 @@ int sendFile(Client * client, client_args* args) {
 		}
 	  }
 
-	 
-int test = 0; 
+	
+
+			/* Test Duplicate Packet 1 and Recive ACK */ 
+
+			printf("Client: Sending duplicate packet 1 with sequence = %c\n", (char)(seq%2 + '0')); 
+ 
+		if (sendto(client->sockfd,client->w_buffer, strlen(client->w_buffer), 0,(struct sockaddr *)&(client->serv_addr), sizeof(client->serv_addr)) <0) error("Error: failure to send File name to server."); 
+
+
+		while(1) {
+			/* Wait for an ACK */ 
+			bzero(client->r_buffer, BUFFER_SZ); 
+			usleep(100000); 	
+			n = recvfrom(client->sockfd, client->r_buffer, BUFFER_SZ, 0, (struct sockaddr*)&(client->serv_addr), &(client->servlen)); 
+			if (n<=0) continue;
+			else break;  
+		}
+
+
+		
+			/* Test Duplicate Packet 2 and Recive ACK */ 
+
+			printf("Client: Sending duplicate packet 2 with sequence = %c\n", (char)(seq%2 + '0')); 
+ 
+		if (sendto(client->sockfd,client->w_buffer, strlen(client->w_buffer), 0,(struct sockaddr *)&(client->serv_addr), sizeof(client->serv_addr)) <0) error("Error: failure to send File name to server."); 
+
+
+		while(1) {
+			/* Wait for an ACK */ 
+			bzero(client->r_buffer, BUFFER_SZ); 
+			usleep(100000); 	
+			n = recvfrom(client->sockfd, client->r_buffer, BUFFER_SZ, 0, (struct sockaddr*)&(client->serv_addr), &(client->servlen)); 
+			if (n<=0) continue;
+			else break;  
+		}
+
+
+
+
+
+
+
+
 	/* Main loop : send file data in 10 byte frames, proceed with the next frame after receiving ACK for the sent frame. */
 	while(!feof(inFile)) {
-	
 		++seq; 
 		bzero(client->w_buffer, BUFFER_SZ);
 		
@@ -135,43 +174,24 @@ int test = 0;
 		}
 
 		if (sendto(client->sockfd, client->w_buffer, j+2 , 0, (struct sockaddr*)&(client->serv_addr), client->servlen) < 0) error("Error: Send file data failed.");   
-		
 		while(1) {
 			/* Wait for an ACK */ 
-			usleep(10000); 
 			bzero(client->r_buffer, BUFFER_SZ); 
-			
+			usleep(100000); 	
 			n = recvfrom(client->sockfd, client->r_buffer, BUFFER_SZ, 0, (struct sockaddr*)&(client->serv_addr), &(client->servlen)); 
 			
 			/*No ACK from server*/
 			if (n <=0)  {
-				usleep(10000); 	
-				n = recvfrom(client->sockfd, client->r_buffer, BUFFER_SZ, 0, (struct sockaddr*)&(client->serv_addr), &(client->servlen)); 
-				if (n <=0) {
-					++seq; 
-					if (seq%2 == 0) {
-						client->w_buffer[j+1] = '0';  			
-					}
-					else {
-						client->w_buffer[j+1] = '1'; 
-					}
-
+				printf("no ack\n");  
 					/* Send file data in a new segment */ 
-					if (sendto(client->sockfd, client->w_buffer, j+2, 0, (struct sockaddr*) &(client->serv_addr), client->servlen) < 0) error("Error: Send file data failed.");  
-				} 	
+					if (sendto(client->sockfd, client->w_buffer, j+2, 0, (struct sockaddr*) &(client->serv_addr), client->servlen) < 0) error("Error: Send file data failed.");   	
+				continue; 
 			}					
 			
 			/* Recieved ACK, check to see if it contains the correct sequence number */
 			if (strstr(client->r_buffer, "ACK")) {
 				if (client->r_buffer[n-1] == (seq%2 + '0')) break;
-				else {	 
-					++seq; 
-					if (seq%2 == 0) {
-						client->w_buffer[j+1] = '0';  			
-					}
-					else {
-						client->w_buffer[j+1] = '1'; 
-					}
+				else {	  
 					/* Send file data in a new segment */ 
 					if (sendto(client->sockfd, client->w_buffer, j+2, 0, (struct sockaddr*) &(client->serv_addr), client->servlen) < 0) error("Error: Send file data failed."); 
  				continue; 
@@ -180,15 +200,12 @@ int test = 0;
 
 		}
 	}	
-
 	client->fin[3] = 0; 
 	crc = (unsigned char) crc_client(client->fin, 3); 
 	client->fin[3] = crc; 
-
 	int i = 0; 
+	++seq; 
 	for(;i<5;++i) {
-		++seq;
-		 
 		if (seq%2 == 0) {
 			client->fin[4] = '0';  		
 		}

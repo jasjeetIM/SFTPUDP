@@ -1,8 +1,8 @@
 /* 
- * File: P2/Server.c
+ * File: P1/Server.c
  * Desc: Implements the functions related to the Server structure. 
  * Author: Jasjeet Dhaliwal
- * Date: 3/7/2016
+ * Date: 1/27/2016
  *
  */
 
@@ -43,7 +43,7 @@ int initServer(Server * server, serv_args* args) {
 	/* Helper variables */ 
 	int n = 0,  r_temp = 0;  
 	char seq = '0';  
-		
+	char seqn = '0'; 		
 	/* Wait for File name from client */  
 	while(1) {
 		r_temp = recvfrom(server->sockfd, server->r_buffer, BUFFER_SIZE, 0,(struct sockaddr *)&(server->cliaddr), &(server->clilen)); 
@@ -51,13 +51,14 @@ int initServer(Server * server, serv_args* args) {
 
 		if (r_temp <= 0) continue; 
 		else {
-			seq = (char )server->r_buffer[r_temp-1];
+			seq = (char )server->r_buffer[r_temp-1]; 
 			/* Perform CRC */
 			if (crc_server(server->r_buffer, r_temp-1)) continue; 
 			else  {
 				server->ack[3] = seq;
 				server->ack[4] = 0;
 				server->r_buffer[r_temp-2] = 0;
+				seqn = seq; 
 				break;
 			}; 
 		}
@@ -72,20 +73,26 @@ int initServer(Server * server, serv_args* args) {
 
 	/* Main loop: receives data frames of size 10 bytes, responds with an ACK, and writes data to file */ 
 	while (1) {
-	
 		bzero(server->r_buffer, BUFFER_SIZE); 
-		
+	
 		/* Get data frame */ 
 		while(1) {
-			n = recvfrom(server->sockfd, server->r_buffer, BUFFER_SIZE, 0, (struct sockaddr *)&(server->cliaddr), &(server->clilen)); 	 		if (n <= 0) continue; 
+			n = recvfrom(server->sockfd, server->r_buffer, BUFFER_SIZE, 0, (struct sockaddr *)&(server->cliaddr), &(server->clilen)); 	 		  if (n <= 0) continue; 
 			else {  
-				seq = (char)server->r_buffer[n -1];  
-							
+				seq = (char)server->r_buffer[n -1];  	
+				if (seq == seqn) {
+					printf("Server: Duplicate Packet. Expected Sequence = %c, Received Sequence = %c\n", (char) (1 + seq), seq); 
+					/*Sending ack for duplicate packet */  
+					if ( sendto(server->sockfd, server->ack, strlen(server->ack), 0, (struct sockaddr *)&(server->cliaddr), server->clilen) < 0) sError("Error: failed to send ACK to client."); 
+					continue; 
+				} 
+			
 				/* Perform CRC */
 				if (crc_server(server->r_buffer, n-1)) { printf("Failed\n"); continue; } 
 				else  {
 					server->ack[3] = seq;
 					server->ack[4] = 0;
+					seqn = seq;
 					break;     
 				}; 
 			}
