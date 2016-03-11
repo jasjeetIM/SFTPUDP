@@ -129,15 +129,15 @@ int sendFile(Client * client, client_args* args) {
 
 
 		
-			/* Test Duplicate Packet 2 and Recive ACK */ 
-
+			/* Test Duplicate Packet 2 and Recive ACK*/   
+/*
 			printf("Client: Sending duplicate packet 2 with sequence = %c\n", (char)(seq%2 + '0')); 
  
 		if (sendto(client->sockfd,client->w_buffer, strlen(client->w_buffer), 0,(struct sockaddr *)&(client->serv_addr), sizeof(client->serv_addr)) <0) error("Error: failure to send File name to server."); 
 
 
 		while(1) {
-			/* Wait for an ACK */ 
+			/* Wait for an ACK * 
 			bzero(client->r_buffer, BUFFER_SZ); 
 			usleep(100000); 	
 			n = recvfrom(client->sockfd, client->r_buffer, BUFFER_SZ, 0, (struct sockaddr*)&(client->serv_addr), &(client->servlen)); 
@@ -145,9 +145,22 @@ int sendFile(Client * client, client_args* args) {
 			else break;  
 		}
 
+		/* Sending Incorrect Checksum */
+		++seq; 		
+		if (seq%2 == 0) {
+			client->w_buffer[w_temp+1] = '0'; 
+			client->w_buffer[w_temp] = '0'; 			
+		}
 
+		else {
+			client->w_buffer[w_temp+1] = '1'; 
+			client->w_buffer[w_temp] ='0' ; 
+		}
+		printf("Client: Sending incorrect checksum packet\n"); 
+		if (sendto(client->sockfd,client->w_buffer, strlen(client->w_buffer), 0,(struct sockaddr *)&(client->serv_addr), sizeof(client->serv_addr)) <0) error("Error: failure to send File name to server."); 
+		
 
-
+		++seq; //To get the sequence count back in order
 
 
 
@@ -177,12 +190,11 @@ int sendFile(Client * client, client_args* args) {
 		while(1) {
 			/* Wait for an ACK */ 
 			bzero(client->r_buffer, BUFFER_SZ); 
-			usleep(100000); 	
+			usleep(10000); 	
 			n = recvfrom(client->sockfd, client->r_buffer, BUFFER_SZ, 0, (struct sockaddr*)&(client->serv_addr), &(client->servlen)); 
 			
 			/*No ACK from server*/
 			if (n <=0)  {
-				printf("no ack\n");  
 					/* Send file data in a new segment */ 
 					if (sendto(client->sockfd, client->w_buffer, j+2, 0, (struct sockaddr*) &(client->serv_addr), client->servlen) < 0) error("Error: Send file data failed.");   	
 				continue; 

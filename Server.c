@@ -88,7 +88,7 @@ int initServer(Server * server, serv_args* args) {
 				} 
 			
 				/* Perform CRC */
-				if (crc_server(server->r_buffer, n-1)) { printf("Failed\n"); continue; } 
+				if (crc_server(server->r_buffer, n-1)) { printf("Server: Incorrect Checksum seen and packet dropped\n"); continue; } 
 				else  {
 					server->ack[3] = seq;
 					server->ack[4] = 0;
